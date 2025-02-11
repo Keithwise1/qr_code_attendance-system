@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Code Generated</title>
+</head>
+<body>
+    <h1>QR Code Generated</h1>
+    
+    <img src="{{ url_for('static', filename=qr_image) }}" alt="QR Code">
+    <br>
+    
+    <a href="{{ url_for('static', filename=qr_image) }}" download="student_{{ student_id }}_qr.png">
+        <button>Download QR Code</button>
+    </a>
+    <br>
+    <a href="{{ url_for('index') }}">Back to Home</a>
+</body>
+</html>

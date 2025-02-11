@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Attendance System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header">
+        <div class="container">
+            <nav>
+                <h1 class="logo">QR CODE MANAGEMENT SYSTEM</h1>
+                <ul>
+                    <li><a href="{{ url_for('index') }}">Home</a></li>
+                    <li><a href="{{ url_for('about') }}">About</a></li>
+                    <li><a href="{{ url_for('login') }}">Account</a></li>
+                    <li><a href="{{ url_for('help') }}">Help</a></li>
+                </ul>
+            </nav>
+        </div>
+        <div class="hero">
+            <h1>Track Attendance with Ease</h1>
+            <p>Mark attendance seamlessly using QR codes.</p>
+            <a href="{{ url_for('login') }}" class="cta-button">Get Started</a>
+        </div>
+    </header>
+
+    <!-- Features Section -->
+    <section class="features">
+        <h2>Why Use QR Attendance?</h2>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <h3>Fast & Efficient</h3>
+                <p>Students can mark attendance in seconds with a quick QR code scan.</p>
+            </div>
+            <div class="feature-item">
+                <h3>Secure & Reliable</h3>
+                <p>Ensures accurate attendance records and prevents proxy attendance.</p>
+            </div>
+            <div class="feature-item">
+                <h3>Automated Reports</h3>
+                <p>Lecturers can generate real-time reports for attendance tracking.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <h2>How It Works</h2>
+        <ol>
+            <li>Lecturers generate a unique QR code for each session.</li>
+            <li>Students scan the QR code to confirm their attendance.</li>
+            <li>Attendance is recorded and stored automatically.</li>
+            <li>Both students and lecturers can access past attendance records.</li>
+        </ol>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div>
+            <h3>Location</h3>
+            <ul>
+                <li>Mweiga, Nyeri (Main Campus)</li>
+                <li>CBD, Nairobi</li>
+            </ul>
+        </div>
+        <div>
+            <h3>Contacts</h3>
+            <p>Email: dekut@dkut.ac.ke <br> Call: 0768791234</p>
+        </div>
+        <div id="footer-text">
+            <p>&copy; 2025 Dedan Kimathi University</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+    <p>Welcome, Admin!</p>
+    <ul>
+        <li><a href="{{ url_for('generate_qr', student_id=1) }}">Generate QR Code</a></li>
+        <li><a href="{{ url_for('attendance') }}">View Attendance</a></li>
+        <li><a href="{{ url_for('dashboard') }}">Attendance Reports</a></li>
+        <li><a href="{{ url_for('logout') }}">Logout</a></li>
+    </ul>
+</body>
+</html>

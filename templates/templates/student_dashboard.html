@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Dashboard</title>
+</head>
+<body>
+    <h1>Student Dashboard</h1>
+    <p>Welcome, Student!</p>
+    <ul>
+        <li><a href="{{ url_for('scan_webcam') }}">Scan QR Code</a></li>
+        <li><a href="{{ url_for('attendance') }}">View Attendance</a></li>
+        <li><a href="{{ url_for('logout') }}">Logout</a></li>
+    </ul>
+</body>
+</html>

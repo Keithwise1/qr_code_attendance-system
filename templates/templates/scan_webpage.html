@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scan QR Code</title>
+</head>
+<body>
+    <h1>Scan QR Code</h1>
+    <video id="video" width="640" height="480" autoplay></video>
+    <script>
+        function startScan() {
+            fetch('/scan')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Attendance marked successfully!');
+                        window.location.href = '/attendance';
+                    }
+                });
+        }
+        startScan();
+    </script>
+</body>
+</html>

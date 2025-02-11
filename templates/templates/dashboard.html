@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attendance Dashboard</title>
+    <style>
+        .stats {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 300px;
+            text-align: center;
+        }
+        .stats h2 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Attendance Statistics</h1>
+    <div class="stats">
+        <h2>Total Attendance</h2>
+        <p>{{ stats.total }}</p>
+    </div>
+    <div class="stats">
+        <h2>On Time</h2>
+        <p>{{ stats.on_time }}</p>
+    </div>
+    <div class="stats">
+        <h2>Late</h2>
+        <p>{{ stats.late }}</p>
+    </div>
+    <a href="{{ url_for('attendance') }}">View Attendance Records</a>
+    <br>
+    <a href="{{ url_for('index') }}">Back to Home</a>
+</body>
+</html>
