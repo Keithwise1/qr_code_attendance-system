@@ -124,32 +124,43 @@ def view_attendance():
         return redirect(url_for('login'))
 
     role = session['role']
+    user_id = session['user_id']
     
     conn = sqlite3.connect('attendance.db')
     cur = conn.cursor()
 
     if role == 'admin':
-        
         cur.execute("""
-            SELECT attendance.id, attendance.student_id, attendance.timestamp, attendance.status, 
-                   timetable.course_name, timetable.lecturer_id
+            SELECT attendance.id, students.name, attendance.timestamp, attendance.status, 
+                   timetable.course_name, lecturers.name
             FROM attendance
             LEFT JOIN timetable ON attendance.session_id = timetable.session_id
+            LEFT JOIN students ON attendance.student_id = students.id
+            LEFT JOIN lecturers ON timetable.lecturer_id = lecturers.id
         """)
+    
     elif role == 'lecturer':
-        
-        lecturer_id = session['user_id']
         cur.execute("""
-            SELECT attendance.id, attendance.student_id, attendance.timestamp, attendance.status, 
+            SELECT attendance.id, students.name, attendance.timestamp, attendance.status, 
                    timetable.course_name
             FROM attendance
             LEFT JOIN timetable ON attendance.session_id = timetable.session_id
+            LEFT JOIN students ON attendance.student_id = students.id
             WHERE timetable.lecturer_id = ?
-        """, (lecturer_id,))
+        """, (user_id,))
+    
+    elif role == 'student':
+        cur.execute("""
+            SELECT attendance.id, attendance.timestamp, attendance.status, 
+                   timetable.course_name
+            FROM attendance
+            LEFT JOIN timetable ON attendance.session_id = timetable.session_id
+            WHERE attendance.student_id = ?
+        """, (user_id,))
+    
     else:
-        
-        flash("Access Denied")
-        return redirect(url_for('dashboard'))  
+        flash("Access Denied", "danger")
+        return redirect(url_for('student_dashboard'))
 
     attendance_records = cur.fetchall()
     conn.close()
