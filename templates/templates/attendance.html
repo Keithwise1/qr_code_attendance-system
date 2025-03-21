@@ -5,28 +5,51 @@
 </head>
 <body>
     <h1>Attendance Records</h1>
+
     <table border="1">
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Student ID</th>
+                <th>Student Name</th>
                 <th>Timestamp</th>
                 <th>Status</th>
+                {% if role == 'admin' %}
+                <th>Action</th> 
+                {% endif %}
             </tr>
         </thead>
         <tbody>
             {% for record in attendance_records %}
             <tr>
                 <td>{{ record.id }}</td>
-                <td>{{ record.student_id }}</td>
+                <td>{{ record.student_name }}</td>
                 <td>{{ record.timestamp }}</td>
                 <td>{{ record.status }}</td>
+                
+                {% if role == 'admin' %}
+                <td>
+                    <form action="{{ url_for('delete_attendance', record_id=record.id) }}" method="POST">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+                {% endif %}
             </tr>
             {% endfor %}
         </tbody>
     </table>
-    <a href="{{ url_for('dashboard') }}">View Dashboard</a>
+
+    <br>
+    <!-- Dynamically direct to the correct dashboard -->
+    {% if role == 'admin' %}
+        <a href="{{ url_for('admin_dashboard') }}">View Dashboard</a>
+    {% elif role == 'lecturer' %}
+        <a href="{{ url_for('lecturer_dashboard') }}">View Dashboard</a>
+    {% else %}
+        <a href="{{ url_for('student_dashboard') }}">View Dashboard</a>
+    {% endif %}
+    
     <br>
     <a href="{{ url_for('index') }}">Back to Home</a>
+
 </body>
 </html>

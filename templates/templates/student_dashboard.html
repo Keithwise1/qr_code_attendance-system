@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Student Dashboard</title>
+    <link rel="stylesheet" href="/static/css/home.css">
 </head>
 <body>
     <h1>Student Dashboard</h1>
     <p>Welcome, Student!</p>
     <ul>
-        <li><a href="{{ url_for('scan_webcam') }}">Scan QR Code</a></li>
-        <li><a href="{{ url_for('attendance') }}">View Attendance</a></li>
+        <li><a href="{{ url_for('scan_qr') }}">Scan QR Code</a></li>
+
+        <li><a href="{{ url_for('view_attendance') }}">View Attendance</a></li>
+
         <li><a href="{{ url_for('logout') }}">Logout</a></li>
     </ul>
 </body>
