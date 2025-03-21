@@ -4,7 +4,7 @@ import os
 import qrcode
 import datetime
 import cv2
-import uuid 
+import time 
 from cv2 import QRCodeDetector
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import send_file
@@ -82,9 +82,9 @@ def manage_timetable():
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("SELECT * FROM timetable")
-    sessions = cur.fetchall()
+    timetable_entries = cur.fetchall() 
     conn.close()
-    return render_template('manage_timetable.html', sessions=sessions)
+    return render_template('manage_timetable.html', timetable=timetable_entries) 
 
 
 @app.route('/add_timetable_entry', methods=['POST'])
@@ -226,29 +226,32 @@ def signup():
     return render_template('signup.html')
 @app.route('/generate_sessions', methods=['GET', 'POST'])
 def generate_sessions():
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash("Unauthorized access!", "danger")
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
     if request.method == 'POST':
-        lecturer_id = request.form.get('lecturer_id')
-        session_code = f"SESSION-{uuid.uuid4().hex[:6].upper()}"
-        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        lecturer_id = request.form['lecturer_id']
+        
+        
+        session_code = f"S{int(time.time())}" 
 
-        conn = sqlite3.connect('attendance.db')
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO sessions (lecturer_id, session_code, created_at) VALUES (?, ?, ?)",
-            (lecturer_id, session_code, created_at)
-        )
+        
+        cursor.execute("INSERT INTO sessions (lecturer_id, session_code, created_at) VALUES (?, ?, datetime('now'))",
+                       (lecturer_id, session_code))
         conn.commit()
-        conn.close()
-
         flash("Session generated successfully!", "success")
 
-    conn = sqlite3.connect('attendance.db')
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM sessions")
+    
+    cursor.execute("SELECT lecturer_id, session_code, created_at FROM sessions ORDER BY created_at DESC")
     sessions = cursor.fetchall()
-    conn.close()
 
-    return render_template('manage_timetable.html', sessions=sessions)
+    conn.close()
+    return render_template('manage_sessions.html', sessions=sessions)
+
 
 
 @app.route('/admin/manage_users')
@@ -302,7 +305,7 @@ def generate_qr_lecturer():
         return redirect(url_for('login'))
 
     lecturer_id = session['user_id']
-    session_code = f"{lecturer_id}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"  # Unique session code
+    session_code = f"{lecturer_id}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}" 
     created_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     conn = get_db_connection()
@@ -340,7 +343,7 @@ def scan_qr():
 
         decoded_text, points, _ = qr_decoder.detectAndDecode(frame)
         if decoded_text:
-            session_id = decoded_text.strip()  # Ensure it's just the session ID
+            session_id = decoded_text.strip()
 
             mark_attendance(session['user_id'], session_id)
             flash("Attendance marked successfully!", "success")

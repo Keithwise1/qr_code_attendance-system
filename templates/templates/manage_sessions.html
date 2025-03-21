@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Sessions</title>
+</head>
+<body>
+    <h1>Manage Sessions</h1>
+
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <p class="{{ category }}">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    
+    <form method="POST" action="{{ url_for('generate_sessions') }}">
+        <label for="lecturer_id">Lecturer ID:</label>
+        <input type="text" id="lecturer_id" name="lecturer_id" required>
+        <button type="submit">Generate Session</button>
+    </form>
+
+    <h2>Existing Sessions</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Session Code</th>
+                <th>Lecturer ID</th>
+                <th>Created At</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for session in sessions %}
+            <tr>
+                <td>{{ session[1] }}</td>  
+                <td>{{ session[0] }}</td> 
+                <td>{{ session[2] }}</td>  
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
