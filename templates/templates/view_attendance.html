@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance Records</title>
+    <script>
+        function printPage() {
+            window.print();
+        }
+    </script>
 </head>
 <body>
     <h1>Attendance Records</h1>
@@ -11,24 +16,49 @@
     <table border="1">
         <tr>
             <th>ID</th>
-            <th>Student Name</th>
+            {% if role == 'admin' or role == 'lecturer' %}
+                <th>Student Name</th>
+            {% endif %}
             <th>Timestamp</th>
             <th>Status</th>
             <th>Course Name</th>
-            <th>Lecturer</th> 
+            {% if role == 'admin' %}
+                <th>Lecturer</th>
+            {% endif %}
+            {% if role == 'admin' or role == 'lecturer' %}
+                <th>Action</th>
+            {% endif %}
         </tr>
         {% for record in attendance %}
         <tr>
             <td>{{ record[0] }}</td>
-            <td>{{ record[1] }}</td> 
+            {% if role == 'admin' or role == 'lecturer' %}
+                <td>{{ record[1] }}</td> 
+            {% endif %}
             <td>{{ record[2] }}</td>
-            <td>{{ record[3] }}</td>
+            <td>
+                {% if record[3] == "Late" or record[3] == "Early" %}
+                    Absent
+                {% else %}
+                    {{ record[3] }}
+                {% endif %}
+            </td>
             <td>{{ record[4] }}</td> 
-            <td>{{ record[5] }}</td> 
+            {% if role == 'admin' %}
+                <td>{{ record[5] }}</td> 
+            {% endif %}
+            {% if role == 'admin' or role == 'lecturer' %}
+                <td>
+                    <form action="{{ url_for('delete_attendance', record_id=record[0]) }}" method="post">
+                        <button type="submit">Delete</button>
+                    </form>
+                </td>
+            {% endif %}
         </tr>
         {% endfor %}
     </table>
 
+    <button onclick="printPage()">Print</button>
     <a href="{{ url_for('admin_dashboard') }}">Back to Dashboard</a>
 </body>
 </html>

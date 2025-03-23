@@ -4,11 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Sessions</title>
+    <style>
+        .success { color: green; }
+        .danger { color: red; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid black; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
 </head>
 <body>
     <h1>Manage Sessions</h1>
 
-    
+    <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
@@ -17,31 +24,44 @@
         {% endif %}
     {% endwith %}
 
-    
+    <!-- Generate Session Form -->
     <form method="POST" action="{{ url_for('generate_sessions') }}">
-        <label for="lecturer_id">Lecturer ID:</label>
-        <input type="text" id="lecturer_id" name="lecturer_id" required>
+        <label for="lecturer_id">Select Lecturer:</label>
+        <select id="lecturer_id" name="lecturer_id" required>
+            {% for lecturer in lecturers %}
+                <option value="{{ lecturer[0] }}">{{ lecturer[1] }} (ID: {{ lecturer[0] }})</option>
+            {% endfor %}
+        </select>
         <button type="submit">Generate Session</button>
     </form>
 
     <h2>Existing Sessions</h2>
-    <table border="1">
+    <table>
         <thead>
             <tr>
                 <th>Session Code</th>
-                <th>Lecturer ID</th>
+                <th>Lecturer Name</th>
                 <th>Created At</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
             {% for session in sessions %}
             <tr>
                 <td>{{ session[1] }}</td>  
-                <td>{{ session[0] }}</td> 
+                <td>{{ session[4] }}</td>  
                 <td>{{ session[2] }}</td>  
+                <td>
+                    <form action="{{ url_for('delete_session', session_id=session[0]) }}" method="post">
+                        <button type="submit" onclick="return confirm('Are you sure you want to delete this session?')">Delete</button>
+                    </form>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <br>
+    <a href="{{ url_for('admin_dashboard') }}">Back to Dashboard</a>
 </body>
 </html>

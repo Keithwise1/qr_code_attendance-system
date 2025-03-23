@@ -77,42 +77,70 @@ def about():
 @app.route('/help')
 def help():
     return render_template('help.html')
-@app.route('/manage_timetable')
+@app.route('/manage_timetable', methods=['GET', 'POST'])
 def manage_timetable():
     conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM timetable")
-    timetable_entries = cur.fetchall() 
+    cursor = conn.cursor()
+
+    if request.method == 'POST':
+        course_name = request.form.get('course_name')
+        course_code = request.form.get('course_code')
+        lecturer_id = request.form.get('lecturer_id')
+        day = request.form.get('day')
+        start_time = request.form.get('start_time')
+        end_time = request.form.get('end_time')
+        room = request.form.get('room')
+
+        cursor.execute(
+            "INSERT INTO timetable (course_name, course_code, lecturer_id, day, start_time, end_time, room) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (course_name, course_code, lecturer_id, day, start_time, end_time, room),
+        )
+        conn.commit()
+        flash("Timetable session added successfully!", "success")
+
+    
+    cursor.execute("SELECT id, course_name, course_code, lecturer_id, day, start_time, end_time, room FROM timetable ORDER BY day, start_time")
+    timetable = cursor.fetchall() 
     conn.close()
-    return render_template('manage_timetable.html', timetable=timetable_entries) 
+
+    return render_template('manage_timetable.html', timetable=timetable)
+
+
+
 
 
 @app.route('/add_timetable_entry', methods=['POST'])
 def add_timetable_entry():
+    course_code = request.form['course_code']
     course_name = request.form['course_name']
     lecturer_id = request.form['lecturer_id']
-    session_time = request.form['session_time']
-    session_date = request.form['session_date']
-
+    day = request.form['day'] 
+    start_time = request.form['start_time']  
+    end_time = request.form['end_time'] 
+    room = request.form['room']  
+    
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("INSERT INTO timetable (course_name, lecturer_id, session_time, session_date) VALUES (?, ?, ?, ?)",
-                (course_name, lecturer_id, session_time, session_date))
-    conn.commit()
-    conn.close()
+    
+    try:
+        cur.execute("""
+            INSERT INTO timetable (course_code, course_name, lecturer_id, day, start_time, end_time, room)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (course_code, course_name, lecturer_id, day, start_time, end_time, room))
+        
+        conn.commit()
+        print("Timetable entry added successfully")
+    
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+    
+    finally:
+        conn.close()
     
     return redirect(url_for('manage_timetable'))
 
 
-@app.route('/delete_timetable_entry/<int:session_id>', methods=['POST'])
-def delete_timetable_entry(session_id):
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM timetable WHERE id=?", (session_id,))
-    conn.commit()
-    conn.close()
 
-    return redirect(url_for('manage_timetable'))
 
 
 @app.route('/admin_dashboard')
@@ -126,38 +154,44 @@ def view_attendance():
     role = session['role']
     user_id = session['user_id']
     
-    conn = sqlite3.connect('attendance.db')
+    conn = get_db_connection()
     cur = conn.cursor()
 
     if role == 'admin':
         cur.execute("""
-            SELECT attendance.id, students.name, attendance.timestamp, attendance.status, 
-                   timetable.course_name, lecturers.name
-            FROM attendance
-            LEFT JOIN timetable ON attendance.session_id = timetable.session_id
-            LEFT JOIN students ON attendance.student_id = students.id
-            LEFT JOIN lecturers ON timetable.lecturer_id = lecturers.id
+            SELECT a.id, s.name AS student_name, a.timestamp, 
+                   CASE WHEN a.status IN ('Late', 'Early') THEN 'Absent' ELSE a.status END AS status,
+                   t.course_name, l.name AS lecturer_name
+            FROM attendance a
+            LEFT JOIN sessions sess ON a.session_id = sess.id
+            LEFT JOIN students s ON a.student_id = s.id
+            LEFT JOIN lecturers l ON sess.lecturer_id = l.id
+            LEFT JOIN timetable t ON sess.course_id = t.id
         """)
-    
+
     elif role == 'lecturer':
         cur.execute("""
-            SELECT attendance.id, students.name, attendance.timestamp, attendance.status, 
-                   timetable.course_name
-            FROM attendance
-            LEFT JOIN timetable ON attendance.session_id = timetable.session_id
-            LEFT JOIN students ON attendance.student_id = students.id
-            WHERE timetable.lecturer_id = ?
+            SELECT a.id, s.name AS student_name, a.timestamp, 
+                   CASE WHEN a.status IN ('Late', 'Early') THEN 'Absent' ELSE a.status END AS status,
+                   t.course_name
+            FROM attendance a
+            LEFT JOIN sessions sess ON a.session_id = sess.id
+            LEFT JOIN students s ON a.student_id = s.id
+            LEFT JOIN timetable t ON sess.course_id = t.id
+            WHERE sess.lecturer_id = ?
         """, (user_id,))
-    
+
     elif role == 'student':
         cur.execute("""
-            SELECT attendance.id, attendance.timestamp, attendance.status, 
-                   timetable.course_name
-            FROM attendance
-            LEFT JOIN timetable ON attendance.session_id = timetable.session_id
-            WHERE attendance.student_id = ?
+            SELECT a.id, a.timestamp, 
+                   CASE WHEN a.status IN ('Late', 'Early') THEN 'Absent' ELSE a.status END AS status,
+                   t.course_name
+            FROM attendance a
+            LEFT JOIN sessions sess ON a.session_id = sess.id
+            LEFT JOIN timetable t ON sess.course_id = t.id
+            WHERE a.student_id = ?
         """, (user_id,))
-    
+
     else:
         flash("Access Denied", "danger")
         return redirect(url_for('student_dashboard'))
@@ -168,21 +202,14 @@ def view_attendance():
     return render_template('view_attendance.html', attendance=attendance_records, role=role)
 
 
+
 @app.route('/lecturer_dashboard')
 def lecturer_dashboard():
     return render_template('lecturer_dashboard.html')
 @app.route('/student_dashboard')
 def student_dashboard():
     return render_template('student_dashboard.html')
-@app.route('/delete_attendance/<int:record_id>', methods=['POST'])
-def delete_attendance(record_id):
-    conn = get_db_connection()
-    conn.execute('DELETE FROM attendance WHERE id = ?', (record_id,))
-    conn.commit()
-    conn.close()
-    
-    flash('Attendance record deleted!', 'success')
-    return redirect(url_for('view_attendance'))
+
 
 
 
@@ -245,23 +272,75 @@ def generate_sessions():
     cursor = conn.cursor()
 
     if request.method == 'POST':
-        lecturer_id = request.form['lecturer_id']
-        
-        
-        session_code = f"S{int(time.time())}" 
+        lecturer_id = request.form.get('lecturer_id', '').strip()
 
-        
-        cursor.execute("INSERT INTO sessions (lecturer_id, session_code, created_at) VALUES (?, ?, datetime('now'))",
-                       (lecturer_id, session_code))
+        # Ensure input is numeric
+        if not lecturer_id.isdigit():
+            flash("Invalid Lecturer ID format!", "danger")
+            return redirect(url_for('generate_sessions'))
+
+        lecturer_id = int(lecturer_id)
+
+        # Validate lecturer ID exists
+        cursor.execute("SELECT id FROM users WHERE id = ? AND role = 'lecturer'", (lecturer_id,))
+        lecturer = cursor.fetchone()
+        if not lecturer:
+            flash(f"Lecturer ID {lecturer_id} not found!", "danger")
+            return redirect(url_for('generate_sessions'))
+
+        # Generate unique session code
+        session_code = f"S{int(time.time())}"
+
+        # Insert new session
+        cursor.execute(
+            "INSERT INTO sessions (lecturer_id, session_code, created_at) VALUES (?, ?, datetime('now'))",
+            (lecturer_id, session_code),
+        )
         conn.commit()
         flash("Session generated successfully!", "success")
 
-    
-    cursor.execute("SELECT lecturer_id, session_code, created_at FROM sessions ORDER BY created_at DESC")
+    # Fetch all sessions with lecturer names
+    cursor.execute("""
+        SELECT s.id, s.lecturer_id, s.session_code, s.created_at, u.username AS lecturer_name
+        FROM sessions s
+        JOIN users u ON s.lecturer_id = u.id
+        ORDER BY s.created_at DESC
+    """)
     sessions = cursor.fetchall()
 
+    # Fetch all lecturers for dropdown selection
+    cursor.execute("SELECT id, username FROM users WHERE role = 'lecturer'")
+    lecturers = cursor.fetchall()
+
     conn.close()
-    return render_template('manage_sessions.html', sessions=sessions)
+    return render_template('manage_sessions.html', sessions=sessions, lecturers=lecturers)
+
+
+@app.route('/delete_session/<int:session_id>', methods=['POST'])
+def delete_session(session_id):
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash("Unauthorized access!", "danger")
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Check if session exists before deleting
+    cursor.execute("SELECT id FROM sessions WHERE id = ?", (session_id,))
+    session_exists = cursor.fetchone()
+
+    if session_exists:
+        cursor.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
+        conn.commit()
+        flash("Session deleted successfully!", "success")
+    else:
+        flash("Session not found!", "danger")
+
+    conn.close()
+    return redirect(url_for('generate_sessions'))
+
+
+
 
 
 
@@ -276,6 +355,7 @@ def manage_users():
     conn.close()
     
     return render_template('manage_users.html', users=users)
+
 
 @app.route('/add_user', methods=['POST'])
 def add_user():
@@ -365,23 +445,40 @@ def scan_qr():
     return redirect(url_for('student_dashboard'))
 
 
-def mark_attendance(student_id, session_id):
-    """Records the attendance of a student for a given session"""
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+def mark_attendance(student_id, session_code):
     conn = get_db_connection()
-    session_exists = conn.execute("SELECT id FROM sessions WHERE session_code = ?", (session_id,)).fetchone()
+    cur = conn.cursor()
 
-    if session_exists:
-        conn.execute('''
-            INSERT INTO attendance (student_id, session_id, timestamp, status)
-            VALUES (?, ?, ?, ?)
-        ''', (student_id, session_id, timestamp, 'Present'))
-        conn.commit()
-    else:
-        flash("Invalid session QR code!", "danger")
+    
+    cur.execute("SELECT id FROM timetable WHERE session_code=?", (session_code,))
+    session = cur.fetchone()
 
+    if not session:
+        flash("Invalid session code. Please try again.", "danger")
+        conn.close()
+        return redirect(url_for('student_dashboard'))
+
+    session_id = session[0]  
+
+    
+    cur.execute("SELECT id FROM attendance WHERE student_id=? AND session_id=?", (student_id, session_id))
+    existing_attendance = cur.fetchone()
+
+    if existing_attendance:
+        flash("You have already marked attendance for this session.", "warning")
+        conn.close()
+        return redirect(url_for('student_dashboard'))
+
+    
+    cur.execute("INSERT INTO attendance (student_id, session_id, timestamp) VALUES (?, ?, datetime('now'))",
+                (student_id, session_id))
+    conn.commit()
     conn.close()
+
+    flash("Attendance marked successfully!", "success")
+    return redirect(url_for('student_dashboard'))
+
+
     
 @app.route('/delete_user/<int:user_id>', methods=['POST'])
 def delete_user(user_id):
@@ -396,6 +493,24 @@ def delete_user(user_id):
 
     flash('User deleted successfully!', 'success')
     return redirect(url_for('manage_users'))
+@app.route('/delete_timetable_entry/<int:session_id>', methods=['POST'])
+def delete_timetable_entry(session_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    
+    cur.execute("SELECT id FROM timetable WHERE id=?", (session_id,))
+    if not cur.fetchone():
+        flash("Timetable entry not found!", "danger")
+        return redirect(url_for('manage_timetable'))
+
+    cur.execute("DELETE FROM timetable WHERE id=?", (session_id,))
+    conn.commit()
+    conn.close()
+
+    flash("Timetable entry deleted!", "success")
+    return redirect(url_for('manage_timetable'))
+
 
 
 @app.route('/logout')
