@@ -2,19 +2,46 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard</title>
     <link rel="stylesheet" href="/static/css/home.css">
 </head>
 <body class="student-dashboard">
-    <h1>Student Dashboard</h1>
-    <p>Welcome, Student!</p>
-    <ul>
-        <li><a href="{{ url_for('scan_qr') }}">Scan QR Code</a></li>
+    <header>
+        <h1>Student Dashboard</h1>
+        <nav>
+            <a href="{{ url_for('scan_qr') }}">Scan QR Code</a>
+            <a href="{{ url_for('student_dashboard') }}">View Attendance</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </nav>
+    </header>
 
-        <!-- Update the URL here to point to the correct route for viewing attendance -->
-        <li><a href="{{ url_for('student_dashboard') }}">View Attendance</a></li>
-
-        <li><a href="{{ url_for('logout') }}">Logout</a></li>
-    </ul>
+    <main>
+        <section>
+            <h2>Attendance Records</h2>
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>Session ID</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if attendance %}
+                        {% for record in attendance %}
+                        <tr>
+                            <td>{{ record.session_id }}</td>
+                            <td>{{ record.timestamp }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="2">No attendance records found.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </section>
+    </main>
 </body>
 </html>

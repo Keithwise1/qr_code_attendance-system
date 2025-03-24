@@ -11,7 +11,7 @@
         <h1>Lecturer Dashboard</h1>
         <nav>
             <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('lecturer_dashboard') }}">View Attendance</a> <!-- Change to 'lecturer_dashboard' -->
+            <a href="{{ url_for('lecturer_dashboard') }}">View Attendance</a>
             <a href="{{ url_for('logout') }}">Logout</a>
         </nav>
     </header>
@@ -22,20 +22,20 @@
             <table border="1">
                 <thead>
                     <tr>
+                        <th>Session ID</th>
                         <th>Student ID</th>
-                        <th>Student Name</th> <!-- Added Student Name -->
+                        <th>Student Name</th>
                         <th>Timestamp</th>
-                        <th>Status</th> <!-- Added Status if applicable -->
                     </tr>
                 </thead>
                 <tbody>
-                    {% if attendance_records is defined and attendance_records %}
-                        {% for record in attendance_records %}
+                    {% if attendance %}
+                        {% for record in attendance %}
                         <tr>
-                            <td>{{ record.student_id }}</td>
-                            <td>{{ record.first_name }} {{ record.last_name }}</td> <!-- Added student name -->
-                            <td>{{ record.timestamp }}</td>
-                            <td>{{ record.status }}</td> <!-- You can change this to show different status (if any) -->
+                            <td>{{ record.session_id }}</td> <!-- Displaying session ID -->
+                            <td>{{ record.student_id }}</td> <!-- Displaying student ID -->
+                            <td>{{ record.first_name }} {{ record.last_name }}</td> <!-- Displaying student name -->
+                            <td>{{ record.timestamp }}</td> <!-- Displaying timestamp of attendance -->
                         </tr>
                         {% endfor %}
                     {% else %}
@@ -47,14 +47,13 @@
             </table>
         </section>
 
-        
         <section>
             <h2>Generate QR Code for Attendance Session</h2>
             <form action="{{ url_for('generate_qr_lecturer') }}" method="POST">
                 <button type="submit">Generate QR Code</button>
             </form>
 
-            {% if qr_image is defined and qr_image %}
+            {% if qr_image %}
                 <h3>QR Code for This Session</h3>
                 <img src="{{ url_for('static', filename=qr_image) }}" alt="QR Code">
                 <br>
