@@ -11,7 +11,7 @@
         <h1>Lecturer Dashboard</h1>
         <nav>
             <a href="{{ url_for('index') }}">Home</a>
-            <a href="{{ url_for('view_attendance') }}">View Attendance</a>
+            <a href="{{ url_for('lecturer_dashboard') }}">View Attendance</a> <!-- Change to 'lecturer_dashboard' -->
             <a href="{{ url_for('logout') }}">Logout</a>
         </nav>
     </header>
@@ -23,8 +23,9 @@
                 <thead>
                     <tr>
                         <th>Student ID</th>
+                        <th>Student Name</th> <!-- Added Student Name -->
                         <th>Timestamp</th>
-                        <th>Status</th>
+                        <th>Status</th> <!-- Added Status if applicable -->
                     </tr>
                 </thead>
                 <tbody>
@@ -32,13 +33,14 @@
                         {% for record in attendance_records %}
                         <tr>
                             <td>{{ record.student_id }}</td>
+                            <td>{{ record.first_name }} {{ record.last_name }}</td> <!-- Added student name -->
                             <td>{{ record.timestamp }}</td>
-                            <td>{{ record.status }}</td>
+                            <td>{{ record.status }}</td> <!-- You can change this to show different status (if any) -->
                         </tr>
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="3">No attendance records found.</td>
+                            <td colspan="4">No attendance records found.</td>
                         </tr>
                     {% endif %}
                 </tbody>

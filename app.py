@@ -200,15 +200,78 @@ def view_attendance():
     conn.close()
 
     return render_template('view_attendance.html', attendance=attendance_records, role=role)
+def get_lecturer_attendance(lecturer_id):
+    """Fetch all attendance records for a specific lecturer."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Query to fetch attendance details along with session info, filtered by lecturer's sessions
+    cur.execute("""
+        SELECT s.session_id, t.date, a.timestamp, st.student_id, st.first_name, st.last_name
+        FROM attendance a
+        JOIN timetable t ON a.session_id = t.id
+        JOIN students st ON a.student_id = st.id
+        WHERE t.lecturer_id = ?
+        ORDER BY a.timestamp DESC
+    """, (lecturer_id,))
+
+    attendance = cur.fetchall()
+    conn.close()
+
+    return attendance
+
 
 
 
 @app.route('/lecturer_dashboard')
 def lecturer_dashboard():
-    return render_template('lecturer_dashboard.html')
+    # Retrieve the lecturer's ID from the session (assuming the lecturer is logged in)
+    lecturer_id = session.get('user_id')
+
+    if not lecturer_id:
+        flash("Please log in to view your attendance.", "danger")
+        return redirect(url_for('login'))  # Redirect to login page if not logged in
+
+    # Get all attendance records
+    attendance = get_lecturer_attendance(lecturer_id)
+
+    # Render the lecturer dashboard template and pass the attendance data
+    return render_template('lecturer_dashboard.html', attendance=attendance)
+
+def get_student_attendance(student_id):
+    """Fetch attendance records for a specific student."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Fetch the attendance records, joining the timetable to get session information
+    cur.execute("""
+        SELECT t.session_id, t.date, a.timestamp
+        FROM attendance a
+        JOIN timetable t ON a.session_id = t.id
+        WHERE a.student_id = ?
+        ORDER BY a.timestamp DESC
+    """, (student_id,))
+
+    # Fetch all attendance records for the student
+    attendance = cur.fetchall()
+    conn.close()
+
+    return attendance
+
 @app.route('/student_dashboard')
 def student_dashboard():
-    return render_template('student_dashboard.html')
+    # Retrieve the student's ID from the session (assuming the student is logged in)
+    student_id = session.get('user_id')
+
+    if not student_id:
+        flash("Please log in to view your attendance.", "danger")
+        return redirect(url_for('login'))  # Redirect to login page if not logged in
+
+    # Get attendance data for the student
+    attendance = get_student_attendance(student_id)
+
+    # Render the student dashboard template and pass the attendance data
+    return render_template('student_dashboard.html', attendance=attendance)
 
 
 
