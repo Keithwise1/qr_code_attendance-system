@@ -207,7 +207,7 @@ def get_lecturer_attendance(lecturer_id):
 
     # Query to fetch attendance details along with session info, filtered by lecturer's sessions
     cur.execute("""
-        SELECT s.session_id, a.timestamp, st.student_id, st.first_name, st.last_name
+        SELECT t.session_id, t.date, a.timestamp, st.student_id, st.first_name, st.last_name
         FROM attendance a
         JOIN timetable t ON a.session_id = t.id
         JOIN students st ON a.student_id = st.id
@@ -219,6 +219,7 @@ def get_lecturer_attendance(lecturer_id):
     conn.close()
 
     return attendance
+
 
 @app.route('/lecturer_dashboard')
 def lecturer_dashboard():
