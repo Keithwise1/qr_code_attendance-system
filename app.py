@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session, flash,Response
 import sqlite3
 import os
 import qrcode
@@ -219,16 +219,21 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        
+
         conn = get_db_connection()
         user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
         conn.close()
 
         if user and check_password_hash(user['password'], password):
+            
+            session.clear()  
+
+            
             session['user_id'] = user['id']
             session['role'] = user['role']
             flash('Login successful!', 'success')
 
+        
             if user['role'] == 'admin':
                 return redirect(url_for('admin_dashboard'))
             elif user['role'] == 'lecturer':
@@ -274,24 +279,24 @@ def generate_sessions():
     if request.method == 'POST':
         lecturer_id = request.form.get('lecturer_id', '').strip()
 
-        # Ensure input is numeric
+        
         if not lecturer_id.isdigit():
             flash("Invalid Lecturer ID format!", "danger")
             return redirect(url_for('generate_sessions'))
 
         lecturer_id = int(lecturer_id)
 
-        # Validate lecturer ID exists
+        
         cursor.execute("SELECT id FROM users WHERE id = ? AND role = 'lecturer'", (lecturer_id,))
         lecturer = cursor.fetchone()
         if not lecturer:
             flash(f"Lecturer ID {lecturer_id} not found!", "danger")
             return redirect(url_for('generate_sessions'))
 
-        # Generate unique session code
+        
         session_code = f"S{int(time.time())}"
 
-        # Insert new session
+    
         cursor.execute(
             "INSERT INTO sessions (lecturer_id, session_code, created_at) VALUES (?, ?, datetime('now'))",
             (lecturer_id, session_code),
@@ -299,7 +304,7 @@ def generate_sessions():
         conn.commit()
         flash("Session generated successfully!", "success")
 
-    # Fetch all sessions with lecturer names
+
     cursor.execute("""
         SELECT s.id, s.lecturer_id, s.session_code, s.created_at, u.username AS lecturer_name
         FROM sessions s
@@ -308,7 +313,7 @@ def generate_sessions():
     """)
     sessions = cursor.fetchall()
 
-    # Fetch all lecturers for dropdown selection
+
     cursor.execute("SELECT id, username FROM users WHERE role = 'lecturer'")
     lecturers = cursor.fetchall()
 
@@ -325,7 +330,7 @@ def delete_session(session_id):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Check if session exists before deleting
+    
     cursor.execute("SELECT id FROM sessions WHERE id = ?", (session_id,))
     session_exists = cursor.fetchone()
 
@@ -424,20 +429,36 @@ def scan_qr():
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('login'))
 
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(0)  
+    if not cap.isOpened():
+        flash("Error: Could not open the webcam. Try again.", "danger")
+        return redirect(url_for('student_dashboard'))  
+
     qr_decoder = QRCodeDetector()
+    session_id = None  
 
     while True:
         success, frame = cap.read()
         if not success:
-            break
+            flash("Error: Could not capture a frame. Try again.", "danger")
+            break  
 
         decoded_text, points, _ = qr_decoder.detectAndDecode(frame)
         if decoded_text:
             session_id = decoded_text.strip()
+            result = mark_attendance(session['user_id'], session_id)
 
-            mark_attendance(session['user_id'], session_id)
-            flash("Attendance marked successfully!", "success")
+            if result == "success":
+                flash("Attendance marked successfully!", "success")
+            elif result == "duplicate":
+                flash("You have already marked attendance for this session.", "warning")
+            elif result == "invalid":
+                flash("Invalid session code. Please try again.", "danger")
+
+            break  
+
+        cv2.imshow("QR Code Scanner", frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'): 
             break
 
     cap.release()
@@ -446,17 +467,18 @@ def scan_qr():
 
 
 def mark_attendance(student_id, session_code):
+    """Marks attendance if session is valid and student has not already marked attendance."""
     conn = get_db_connection()
     cur = conn.cursor()
 
     
-    cur.execute("SELECT id FROM timetable WHERE session_code=?", (session_code,))
+    cur.execute("SELECT id FROM timetable WHERE session_id=?", (session_code,))
+
     session = cur.fetchone()
 
     if not session:
-        flash("Invalid session code. Please try again.", "danger")
         conn.close()
-        return redirect(url_for('student_dashboard'))
+        return "invalid" 
 
     session_id = session[0]  
 
@@ -465,9 +487,8 @@ def mark_attendance(student_id, session_code):
     existing_attendance = cur.fetchone()
 
     if existing_attendance:
-        flash("You have already marked attendance for this session.", "warning")
         conn.close()
-        return redirect(url_for('student_dashboard'))
+        return "duplicate"  
 
     
     cur.execute("INSERT INTO attendance (student_id, session_id, timestamp) VALUES (?, ?, datetime('now'))",
@@ -475,8 +496,7 @@ def mark_attendance(student_id, session_code):
     conn.commit()
     conn.close()
 
-    flash("Attendance marked successfully!", "success")
-    return redirect(url_for('student_dashboard'))
+    return "success"  
 
 
     

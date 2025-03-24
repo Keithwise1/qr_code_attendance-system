@@ -1,23 +1,50 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scan QR Code</title>
 </head>
 <body>
     <h1>Scan QR Code</h1>
     <video id="video" width="640" height="480" autoplay></video>
+    <canvas id="canvas" style="display: none;"></canvas>
+    
     <script>
-        function startScan() {
-            fetch('/scan')
-                .then(response => response.json())
-                .then(data => {
+        async function startScan() {
+            const video = document.getElementById("video");
+            const canvas = document.getElementById("canvas");
+            const context = canvas.getContext("2d");
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (error) {
+                alert("Camera access denied or unavailable.");
+                return;
+            }
+
+            setInterval(() => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                canvas.toBlob(async (blob) => {
+                    let formData = new FormData();
+                    formData.append("frame", blob);
+
+                    const response = await fetch('/scan', { method: 'POST', body: formData });
+                    const data = await response.json();
+
                     if (data.status === 'success') {
                         alert('Attendance marked successfully!');
-                        window.location.href = '/attendance';
+                        window.location.href = '/student_dashboard';
                     }
-                });
+                }, 'image/png');
+            }, 1500); 
         }
-        startScan();
+
+        window.onload = startScan;
     </script>
 </body>
 </html>

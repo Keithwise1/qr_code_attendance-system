@@ -17,23 +17,23 @@
     <table border="1">
         <tr>
             <th>ID</th>
-            {% if role == 'admin' or role == 'lecturer' %}
+            {% if session['role'] == 'admin' or session['role'] == 'lecturer' %}
                 <th>Student Name</th>
             {% endif %}
             <th>Timestamp</th>
             <th>Status</th>
             <th>Course Name</th>
-            {% if role == 'admin' %}
+            {% if session['role'] == 'admin' %}
                 <th>Lecturer</th>
             {% endif %}
-            {% if role == 'admin' or role == 'lecturer' %}
+            {% if session['role'] == 'admin' or session['role'] == 'lecturer' %}
                 <th>Action</th>
             {% endif %}
         </tr>
         {% for record in attendance %}
         <tr>
             <td>{{ record[0] }}</td>
-            {% if role == 'admin' or role == 'lecturer' %}
+            {% if session['role'] == 'admin' or session['role'] == 'lecturer' %}
                 <td>{{ record[1] }}</td> 
             {% endif %}
             <td>{{ record[2] }}</td>
@@ -45,10 +45,10 @@
                 {% endif %}
             </td>
             <td>{{ record[4] }}</td> 
-            {% if role == 'admin' %}
+            {% if session['role'] == 'admin' %}
                 <td>{{ record[5] }}</td> 
             {% endif %}
-            {% if role == 'admin' or role == 'lecturer' %}
+            {% if session['role'] == 'admin' or session['role'] == 'lecturer' %}
                 <td>
                     <form action="{{ url_for('delete_attendance', record_id=record[0]) }}" method="post">
                         <button type="submit">Delete</button>
@@ -60,6 +60,14 @@
     </table>
 
     <button onclick="printPage()">Print</button>
-    <a href="{{ url_for('admin_dashboard') }}">Back to Dashboard</a>
+
+    
+    {% if session['role'] == 'admin' %}
+        <a href="{{ url_for('admin_dashboard') }}">Back to Dashboard</a>
+    {% elif session['role'] == 'lecturer' %}
+        <a href="{{ url_for('lecturer_dashboard') }}">Back to Dashboard</a>
+    {% elif session['role'] == 'student' %}
+        <a href="{{ url_for('student_dashboard') }}">Back to Dashboard</a>
+    {% endif %}
 </body>
 </html>
