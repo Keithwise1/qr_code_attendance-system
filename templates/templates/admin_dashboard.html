@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
-</head>
-<body>
+     <link rel="stylesheet" href="/static/css/home.css">
+<!--</head>
+<body class="admin-dashboard">
     <h1>Admin Dashboard</h1>
     <p>Welcome, Admin!</p>
 
@@ -16,5 +17,31 @@
         <li><a href="{{ url_for('generate_sessions') }}">Generate Timetable Sessions</a></li>
         <li><a href="{{ url_for('logout') }}">Logout</a></li>
     </ul>
+</body>
+</html>
+-->
+   <body class="admin">
+<div class="dashboard">
+    <h1>Admin Dashboard</h1>
+    <p>Welcome, Admin!</p>
+
+    <div class="cards-container">
+        <div class="card">
+            <a href="{{ url_for('manage_users') }}">Manage Users</a>
+        </div>
+        <div class="card">
+            <a href="{{ url_for('view_attendance') }}">View Attendance Records</a>
+        </div>
+        <div class="card">
+            <a href="{{ url_for('manage_timetable') }}">Manage Timetable</a>
+        </div>
+        <div class="card">
+            <a href="{{ url_for('generate_sessions') }}">Generate Timetable Sessions</a>
+        </div>
+        <div class="card logout">
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </div>
+</div>
 </body>
 </html>
